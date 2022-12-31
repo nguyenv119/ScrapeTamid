@@ -9,11 +9,13 @@ END = 9327
 TEST = 9319
 OUTPUT_FILE = 'output.txt'
 BASE_URL = 'https://apps.tamidgroup.org/Consulting/Company/posting?id='
-LOGIN_URL = 'https://m.stripe.com/6'
+LOGIN_URL = 'https://apps.tamidgroup.org/login'
 
 payload = {
     'Email': config["EMAIL"],
-    'password': config["PASSWORD"]
+    'password': config["PASSWORD"],
+    'submit': 'Sign in',
+    '__EVENTTARGET': '',
 }
 
 def main():
@@ -23,8 +25,30 @@ def main():
     with open(OUTPUT_FILE, 'w') as f:
         with requests.Session() as s:
             # login
-            p = s.post(LOGIN_URL, data=payload)
-            print(p.text)
+            page = s.get(LOGIN_URL)
+            soup = BeautifulSoup(page.content, 'lxml')
+            payload["___VIEWSTATE"] = soup.select_one("#__VIEWSTATE")["value"]
+            payload["__VIEWSTATEGENERATOR"] = soup.select_one("#__VIEWSTATEGENERATOR")["value"]
+            payload["__EVENTVALIDATION"] = soup.select_one("#__EVENTVALIDATION")["value"]
+            payload['__EVENTARGUMENT'] = ''
+
+            print(s.post(LOGIN_URL, data=payload).status_code)
+
+            open_page = s.get(f"https://apps.tamidgroup.org/Consulting/PMPD/ConsultingDashboard")
+
+            with open("before.txt", 'w') as before:
+                before.write(page.text)
+            with open("after.txt", "w") as after:
+                after.write(open_page.text)
+
+
+            if page.text[0:1100] == open_page.text[0:1100]:
+                print("Same page")
+            else:
+                print(open_page.text)
+                print("Different page!")
+
+
             for i in range(TEST, TEST + 1):
                 html = get_html(i, s)
                 company:dict = get_content(i, html)
@@ -44,6 +68,7 @@ def get_content(id: int, html_file) -> dict:
 
     box = soup.find_all('div', class_= 'u-shadow-v11 rounded g-pa-30')
     if len(box) == 0:
+        print(f'error: page {id - START + 1}/{END - START + 1}')
         return {}
     else:
         box = box[0]
@@ -53,6 +78,7 @@ def get_content(id: int, html_file) -> dict:
     list_group_items = box.find_all('li', class_= 'list-group-item')
     proj_desc = box.find('p', class_='margin-bottom-40')
     if len(list_group_items) < 14 or len(list_group_items) == 0:
+        print(f'error: page {id - START + 1}/{END - START + 1}')
         return {}
 
     content['name'] = f"{list_group_items[0].find('div', class_='col-xs-8').text.strip()}"
