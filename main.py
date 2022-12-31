@@ -5,8 +5,9 @@ from dotenv import dotenv_values
 config = dotenv_values(".env")
 
 
-START = 9219
-END = 9327
+START = 9000
+END = 11000
+DELAY = 0.5
 OUTPUT_FILE = 'output.txt'
 BASE_URL = 'https://apps.tamidgroup.org/Consulting/Company/posting?id='
 LOGIN_URL = 'https://apps.tamidgroup.org/login'
@@ -21,7 +22,7 @@ payload = {
 
 def main():
 
-    companies = set()
+    valid_count = 0
 
     with open(OUTPUT_FILE, 'w') as f:
         with requests.Session() as s:
@@ -46,18 +47,18 @@ def main():
 
             for i in range(START, END + 1):
                 print(f"{i - START + 1}/{END - START + 1}", end="")
-                time.sleep(.5)
+                time.sleep(DELAY)
                 html = get_html(i, s)
                 company:dict = get_content(i, html)
-                if 'name' in company.keys() and company['name'] not in companies:
+                if 'name' in company.keys():
                     print_to_output_file(company, f)
-                    companies.add(company['name'].lower())
-            end_time = time.time()
-            print(f"Complete\nRuntime: {end_time - start_time}\nValid items: {len(companies)}")
+                    valid_count += 1
+            total_time = time.time() - start_time
+            print(f"Complete\nRuntime: {total_time}\nRuntime minus delay: {total_time - DELAY * (END - START)}\nValid items: {valid_count}")
 
 def get_html(id: int, s) -> str:
-    response = s.get(BASE_URL + str(id)).text
-    return response
+    response = s.get(BASE_URL + str(id))
+    return response.text
 
 
 def get_content(id: int, html_file) -> dict:
