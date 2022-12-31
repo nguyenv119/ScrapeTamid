@@ -36,9 +36,9 @@ def main():
 
             open_page = s.get(f"https://apps.tamidgroup.org/Consulting/PMPD/ConsultingDashboard")
 
-            with open("before.txt", 'w') as before:
+            with open("before.html", 'w') as before:
                 before.write(page.text)
-            with open("after.txt", "w") as after:
+            with open("after.html", "w") as after:
                 after.write(open_page.text)
 
 
