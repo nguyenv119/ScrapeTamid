@@ -1,25 +1,40 @@
 from bs4 import BeautifulSoup
+import requests
+from dotenv import dotenv_values
+config = dotenv_values(".env")
+
+
 START = 9219
-# END = 9327
-END = START
+END = 9327
+TEST = 9319
 OUTPUT_FILE = 'output.txt'
 BASE_URL = 'https://apps.tamidgroup.org/Consulting/Company/posting?id='
+LOGIN_URL = 'https://m.stripe.com/6'
+
+payload = {
+    'Email': config["EMAIL"],
+    'password': config["PASSWORD"]
+}
 
 def main():
 
     companies = set()
 
     with open(OUTPUT_FILE, 'w') as f:
-        for i in range(START, END + 1):
-            html = get_html(i)
-            company:dict = get_content(i, html)
-            if 'name' in company.keys() and company['name'] not in companies:
-                print_to_output_file(company, f)
-                companies.add(company['name'].lower())
+        with requests.Session() as s:
+            # login
+            p = s.post(LOGIN_URL, data=payload)
+            print(p.text)
+            for i in range(TEST, TEST + 1):
+                html = get_html(i, s)
+                company:dict = get_content(i, html)
+                if 'name' in company.keys() and company['name'] not in companies:
+                    print_to_output_file(company, f)
+                    companies.add(company['name'].lower())
 
-def get_html(i: int) -> str:
-    f = open('test2.html', 'r')
-    return f.read()
+def get_html(id: int, s) -> str:
+    response = s.get(BASE_URL + str(id)).text
+    return response
 
 
 def get_content(id: int, html_file) -> dict:
@@ -27,16 +42,17 @@ def get_content(id: int, html_file) -> dict:
 
     soup = BeautifulSoup(html_file, 'lxml')
 
-    box = soup.find_all('div', class_= 'u-shadow-v11 rounded g-pa-30')[0]
-
-    
-
+    box = soup.find_all('div', class_= 'u-shadow-v11 rounded g-pa-30')
+    if len(box) == 0:
+        return {}
+    else:
+        box = box[0]
     # contains: name, rating, industry, website, company description, company size, point of 
     # contact
     # contains: deliverable description and work time 
     list_group_items = box.find_all('li', class_= 'list-group-item')
     proj_desc = box.find('p', class_='margin-bottom-40')
-    if len(list_group_items) < 14:
+    if len(list_group_items) < 14 or len(list_group_items) == 0:
         return {}
 
     content['name'] = f"{list_group_items[0].find('div', class_='col-xs-8').text.strip()}"
