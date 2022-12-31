@@ -26,6 +26,8 @@ def main():
     with open(OUTPUT_FILE, 'w') as f:
         with requests.Session() as s:
             # login
+            start_time = time.time()
+
             page = s.get(LOGIN_URL)
             soup = BeautifulSoup(page.content, 'lxml')
             payload["__VIEWSTATE"] = soup.select_one("#__VIEWSTATE")["value"]
@@ -34,7 +36,7 @@ def main():
 
             s.post(LOGIN_URL, data=payload)
 
-            open_page = s.get("https://apps.tamidgroup.org/Consulting/PMPD/ConsultingDashboard").text
+            open_page = s.get("https://apps.tamidgroup.org/Consulting/PMPD/ConsultingDashboard")
 
             if page.text[:1000] == open_page.text[:1000]:
                 print('authetication error')
@@ -44,12 +46,14 @@ def main():
 
             for i in range(START, END + 1):
                 print(f"{i - START + 1}/{END - START + 1}", end="")
-                time.sleep(500)
+                time.sleep(.5)
                 html = get_html(i, s)
                 company:dict = get_content(i, html)
                 if 'name' in company.keys() and company['name'] not in companies:
                     print_to_output_file(company, f)
                     companies.add(company['name'].lower())
+            end_time = time.time()
+            print(f"Complete\nRuntime: {end_time - start_time}\nValid items: {len(companies)}")
 
 def get_html(id: int, s) -> str:
     response = s.get(BASE_URL + str(id)).text
