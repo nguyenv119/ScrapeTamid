@@ -7,6 +7,7 @@ config = dotenv_values(".env")
 
 START = 9000
 END = 11000
+TEST = 9007
 DELAY = 0.5
 OUTPUT_FILE = 'output.txt'
 BASE_URL = 'https://apps.tamidgroup.org/Consulting/Company/posting?id='
@@ -45,7 +46,7 @@ def main():
             else:
                 print("Logged in")
 
-            for i in range(START, END + 1):
+            for i in range(TEST, TEST + 1):
                 print(f"{i - START + 1}/{END - START + 1}", end="")
                 time.sleep(DELAY)
                 html = get_html(i, s)
@@ -67,21 +68,30 @@ def get_content(id: int, html_file) -> dict:
     soup = BeautifulSoup(html_file, 'lxml')
 
     box = soup.find_all('div', class_= 'u-shadow-v11 rounded g-pa-30')
-    if len(box) == 0:
+    if len(box) < 2:
         print('\terror - redirect')
         return {}
     else:
-        box = box[0]
+        box1 = box[0]
+        box2 = box[1]
     # contains: name, rating, industry, website, company description, company size, point of 
     # contact
     # contains: deliverable description and work time 
-    list_group_items = box.find_all('li', class_= 'list-group-item')
-    proj_desc = box.find('p', class_='margin-bottom-40')
-    if len(list_group_items) < 14 or len(list_group_items) == 0:
+    list_group_items = box1.find_all('li', class_= 'list-group-item')
+    if len(list_group_items) < 14:
+        print('\terror - not tech')
+        return {}
+    proj_desc = box1.find('p', class_='margin-bottom-40')
+    if len(list_group_items) == 0:
+        print('\terror - not tech')
+        return {}
+    start_date = box2.find_all('div', class_='col-xs-6')
+    if len(box2) < 2:
         print('\terror - not tech')
         return {}
 
     content['name'] = f"{list_group_items[0].find('div', class_='col-xs-8').text.strip()}"
+    content['start_date'] = f"{start_date[1].text.strip()}"
     content['industry'] = f"{list_group_items[2].find('div', class_='col-xs-8').text.strip()}" 
     content['url'] = f'{BASE_URL}{id}'
     content['website'] = f"{list_group_items[3].find('div', class_='col-xs-8').text.strip()}"
@@ -100,7 +110,7 @@ def print_to_output_file(content: dict, f):
     """Takes dict as input and writes the content to output file"""
     for key, value in content.items():
         f.write(f"{key}: {value}\n")
-    f.write("\n")
+    f.write("\n\n\n")
 
 if __name__ == '__main__':
     main()
