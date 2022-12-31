@@ -1,12 +1,12 @@
 from bs4 import BeautifulSoup
 import requests
+import time
 from dotenv import dotenv_values
 config = dotenv_values(".env")
 
 
 START = 9219
 END = 9327
-TEST = 9319
 OUTPUT_FILE = 'output.txt'
 BASE_URL = 'https://apps.tamidgroup.org/Consulting/Company/posting?id='
 LOGIN_URL = 'https://apps.tamidgroup.org/login'
@@ -16,6 +16,7 @@ payload = {
     'password': config["PASSWORD"],
     'submit': 'Sign in',
     '__EVENTTARGET': '',
+    '__EVENTARGUMENT': ''
 }
 
 def main():
@@ -27,29 +28,23 @@ def main():
             # login
             page = s.get(LOGIN_URL)
             soup = BeautifulSoup(page.content, 'lxml')
-            payload["___VIEWSTATE"] = soup.select_one("#__VIEWSTATE")["value"]
+            payload["__VIEWSTATE"] = soup.select_one("#__VIEWSTATE")["value"]
             payload["__VIEWSTATEGENERATOR"] = soup.select_one("#__VIEWSTATEGENERATOR")["value"]
             payload["__EVENTVALIDATION"] = soup.select_one("#__EVENTVALIDATION")["value"]
-            payload['__EVENTARGUMENT'] = ''
 
-            print(s.post(LOGIN_URL, data=payload).status_code)
+            s.post(LOGIN_URL, data=payload)
 
-            open_page = s.get(f"https://apps.tamidgroup.org/Consulting/PMPD/ConsultingDashboard")
+            open_page = s.get("https://apps.tamidgroup.org/Consulting/PMPD/ConsultingDashboard").text
 
-            with open("before.html", 'w') as before:
-                before.write(page.text)
-            with open("after.html", "w") as after:
-                after.write(open_page.text)
-
-
-            if page.text[0:1100] == open_page.text[0:1100]:
-                print("Same page")
+            if page.text[:1000] == open_page.text[:1000]:
+                print('authetication error')
+                return
             else:
-                print(open_page.text)
-                print("Different page!")
+                print("Logged in")
 
-
-            for i in range(TEST, TEST + 1):
+            for i in range(START, END + 1):
+                print(f"{i - START + 1}/{END - START + 1}", end="")
+                time.sleep(500)
                 html = get_html(i, s)
                 company:dict = get_content(i, html)
                 if 'name' in company.keys() and company['name'] not in companies:
@@ -68,7 +63,7 @@ def get_content(id: int, html_file) -> dict:
 
     box = soup.find_all('div', class_= 'u-shadow-v11 rounded g-pa-30')
     if len(box) == 0:
-        print(f'error: page {id - START + 1}/{END - START + 1}')
+        print('\terror - redirect')
         return {}
     else:
         box = box[0]
@@ -78,7 +73,7 @@ def get_content(id: int, html_file) -> dict:
     list_group_items = box.find_all('li', class_= 'list-group-item')
     proj_desc = box.find('p', class_='margin-bottom-40')
     if len(list_group_items) < 14 or len(list_group_items) == 0:
-        print(f'error: page {id - START + 1}/{END - START + 1}')
+        print('\terror - not tech')
         return {}
 
     content['name'] = f"{list_group_items[0].find('div', class_='col-xs-8').text.strip()}"
@@ -93,6 +88,7 @@ def get_content(id: int, html_file) -> dict:
     content['deliverable_type'] = f"{list_group_items[11].find('div', class_='col-xs-8').text.strip()}" 
     content['work_type'] = f"{list_group_items[12].find('div', class_='col-xs-8').text.strip()}" 
     content['tech_stack'] = f"{list_group_items[13].find('div', class_='col-xs-8').text.strip()}" 
+    print()
     return content
 
 def print_to_output_file(content: dict, f):
