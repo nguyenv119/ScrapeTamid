@@ -3,13 +3,16 @@ import requests
 import time
 from dotenv import dotenv_values
 config = dotenv_values(".env")
-
+#TODO: hide things without apply button
+#TODO: hide items already assigned
+#TODO: todo list
+#TODO: GUI
 
 START = 9000
 END = 11000
 # TEST = 9007
 DELAY = 0.5
-OUTPUT_FILE = 'output.txt'
+OUTPUT_FILE = 'tech.html'
 BASE_URL = 'https://apps.tamidgroup.org/Consulting/Company/posting?id='
 LOGIN_URL = 'https://apps.tamidgroup.org/login'
 
@@ -46,6 +49,16 @@ def main():
             else:
                 print("Logged in")
 
+            f.write("""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulting items</title>
+</head>
+<body>""")
+
             for i in range(START, END + 1):
                 print(f"{i - START + 1}/{END - START + 1}", end="")
                 internal_start = time.time()
@@ -56,6 +69,7 @@ def main():
                     valid_count += 1
                 internal_end = time.time()
                 time.sleep(max(0, DELAY - (internal_end - internal_start)))
+            f.write("</body></html>")
             total_time = time.time() - start_time
             print(f"Complete\nRuntime: {total_time}\nRuntime minus delay: {total_time - DELAY * (END - START)}\nValid items: {valid_count}")
 
@@ -87,9 +101,13 @@ def get_content(id: int, html_file) -> dict:
     if len(proj_desc) == 0:
         print('\terror - not tech')
         return {}
-    start_date = box2.find_all('div', class_='col-xs-6')
     if len(box2) < 2:
         print('\terror - not tech')
+        return {}
+    start_date = box2.find_all('div', class_='col-xs-6')
+    start_date = start_date[1].text.strip()
+    if not("2023" in start_date):
+        print('\tWrong year')
         return {}
 
     content['name'] = f"{list_group_items[0].find('div', class_='col-xs-8').text.strip()}"
@@ -111,8 +129,11 @@ def get_content(id: int, html_file) -> dict:
 def print_to_output_file(content: dict, f):
     """Takes dict as input and writes the content to output file"""
     for key, value in content.items():
-        f.write(f"{key}: {value}\n")
-    f.write("\n\n\n")
+        if key == "url" or key == "website":
+            f.write(f"<div><b>{key}</b>: <a href={value}>{value}</a><br><br>")
+        else:
+            f.write(f"<div><b>{key}</b>: {value}</div><br>")
+    f.write("<hr><br>")
 
 if __name__ == '__main__':
     main()
