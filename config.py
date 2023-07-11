@@ -15,10 +15,10 @@ class Config:
     base_url: str = 'https://apps.tamidgroup.org/Consulting/Company/posting?id='
     login_url = 'https://apps.tamidgroup.org/login'
 
-email = config["email"]
-password = config["password"]
-if email == None or password == None:
-    raise Exception("Please set EMAIL and PASSWORD in .env file")
+email = config.get("email")
+password = config.get("password")
+if not (email and password):
+    raise Exception("Please set email and password in .env file")
 
 config = Config(
     # Edit start and end here, and email / password in .env
