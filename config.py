@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Optional
 from dotenv import dotenv_values
+
+# Gets values from .env file
 config = dotenv_values(".env")
 
 @dataclass
