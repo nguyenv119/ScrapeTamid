@@ -11,9 +11,9 @@ def get_tech_content(id: int, html_file, base_url) -> dict:
   else:
     box1 = box[0]
     box2 = box[1]
-  # contains: name, rating, industry, website, company description, company size, point of 
-  # contact
-  # contains: deliverable description and work time 
+
+  # contains: name, rating, industry, website, company description, company size, point of contact, deliverable description and work time 
+
   list_group_items = box1.find_all('li', class_= 'list-group-item')
   if len(list_group_items) < 14:
     print('\terror - not tech')
