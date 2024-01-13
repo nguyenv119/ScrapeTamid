@@ -1,7 +1,6 @@
 from bs4 import BeautifulSoup
 
-# a
-# b
+# some stuff here bruh
 
 def get_tech_content(id: int, html_file, base_url) -> dict:
   content = dict()
