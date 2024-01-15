@@ -24,4 +24,4 @@ python main.py <output_file> <email> <password> <start_id> <end_id>
 Once the script has run, you can view the html file by opening it in your file explorer, right clicking, and opening with chrome/firefox/safari.
 
 ### Options
-For additional options and help, run `python scraper.py -help`
+For additional options and help, run `python scraper.py --help`
