@@ -5,8 +5,8 @@ from typing import Optional
 from argparse import Namespace
 import requests
 import time
-from scrapeConsulting import get_consulting_content
-from scrapeTech import get_tech_content
+from scrapers.scrapeConsulting import get_consulting_content
+from scrapers.scrapeTech import get_tech_content
 
 payload = {
     'Email': None,
