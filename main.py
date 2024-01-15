@@ -32,6 +32,17 @@ class Config:
     login_url = 'https://apps.tamidgroup.org/login'
 
 
+def main():
+    config = parse_args()
+    try:
+        if config.category == 'tech':
+            scraper(config, get_tech_content)
+        else:
+            scraper(config, get_consulting_content)
+    except KeyboardInterrupt:
+        print("\nExiting")
+
+
 def parse_args() -> Config:
     parser = argparse.ArgumentParser(
         prog='tamid scraper',
@@ -65,30 +76,17 @@ def parse_args() -> Config:
     return config
 
 
-def main():
-    config = parse_args()
-    try:
-        if config.category == 'tech':
-            scraper(config, get_tech_content)
-        else:
-            scraper(config, get_consulting_content)
-    except KeyboardInterrupt:
-        print("\nExiting")
-
-
 def scraper(config: Config, scraper_function):
 
     valid_count = 0
 
-    with open(config.out, 'w') as f:
-        with requests.Session() as s:
-            start_time = time.time()
-
-            # login
-            if not login(config.login_url, payload, s):
-                print('authetication error')
-                return
-            print("Logged in")
+    with requests.Session() as s:
+        start_time = time.time()
+        if not login(config.login_url, payload, s):
+            print('authetication error')
+            exit(1)
+        print("Logged in")
+        with open(config.out, 'w') as f:
 
             f.write("""<!DOCTYPE html>
 <html lang="en">
